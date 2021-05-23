@@ -178,8 +178,6 @@ def switchBook(bookId, trackId):
 # INIT SYSTEM
 readySignal.on()
 print('System initialized')
-playMessage('start')
-loadTrackAudio()
 
 # FIND AND MOUNT USB STICK
 print('Detecting USB devices...')
@@ -206,6 +204,7 @@ for u in usbs:
 if usbDetected:
     config.read('/media/RPI/config.ini')
     messages = True if config['RESUME']['Messages'] == '1' else False
+    playMessage('start')
     maxBook = int(config['BOOKS']['Count'])
     switchBook(config['RESUME']['Book'], config['RESUME']['Track'])
     #setAudioPosition(config['RESUME']['Time'], False) # TODO broked time resume

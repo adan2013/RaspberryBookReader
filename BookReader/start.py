@@ -32,6 +32,7 @@ class S(Enum):
     Playing = 3
     PlayingMessage = 4
     SwitchingBooks = 5
+    SystemShutdown = 6
 
 # CURRENT DATA
 media = vlc.MediaPlayer('')
@@ -214,28 +215,38 @@ else:
     switchState(S.Error)
 
 # SHUTDOWN EVENT
-def systemShutdown():
-    #playMessage('end')
+def poweroffSystem():
     readySignal.off()
-    print('System shutdown...')
     os.system('sudo poweroff')
 
-shutdownBtn.when_pressed = systemShutdown
+def systemShutdownSignal():
+    print('System shutdown...')
+    if messages:
+        playMessage('end')
+        loadTrackAudio()
+        switchState(S.SystemShutdown)
+    else:
+        poweroffSystem()
+
+shutdownBtn.when_pressed = systemShutdownSignal
 
 # NEXT TRACK EVENT
 def checkTrackEndedEvent():
     global trackEndedFlag
     global trackQueue
     if trackEndedFlag:
-        trackEndedFlag = False
-        print('\nSwitching to the next track...')
-        if trackQueue.empty():
-            if isState(S.Playing):
-                switchTrack(track + 1)
+        if isState(S.SystemShutdown):
+            poweroffSystem()
+        else:
+            trackEndedFlag = False
+            print('\nSwitching to the next track...')
+            if trackQueue.empty():
+                if isState(S.Playing):
+                    switchTrack(track + 1)
+                else:
+                    loadTrackAudio()
             else:
                 loadTrackAudio()
-        else:
-            loadTrackAudio()
 
 # BUTTON EVENTS
 def prevChapter():
@@ -324,7 +335,7 @@ if len(sys.argv) > 1 and sys.argv[1] == '-vkb':
         if k == 'm':
             toggleMessages()
         if k == 'p':
-            systemShutdown()
+            systemShutdownSignal()
 else:
     # AUTOSTART VERSION MODE
     while True:

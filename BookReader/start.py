@@ -51,7 +51,7 @@ messages = True
 shutdownBtn = GPIO.Button(SHUTDOWN_PIN)
 
 readySignal = GPIO.LED(READY_PIN)
-stateLedSignal = GPIO.LED(LED_STATE_PIN)
+stateLed = GPIO.PWMLED(LED_STATE_PIN)
 
 prevBtn = GPIO.Button(PREV_PIN)
 rewindBtn = GPIO.Button(REWIND_PIN)
@@ -66,6 +66,12 @@ def switchState(newState):
     global state
     state = newState
     print('Switching state to:',  newState.name)
+    if state == S.Error:
+        stateLed.off()
+    elif state == S.Paused:
+        stateLed.blink(0.8, 0.8)
+    else:
+        stateLed.on()
 
 def isState(stateToCheck):
     return state == stateToCheck
@@ -114,7 +120,8 @@ def loadTrackAudio():
     else:
         pathToFile = trackQueue.get()
         print('Loading message file... PATH:', pathToFile)
-        switchState(S.PlayingMessage)
+        if not isState(S.Error):
+            switchState(S.PlayingMessage)
     media = vlc.MediaPlayer(pathToFile)
     events = media.event_manager()
     events.event_attach(vlc.EventType.MediaPlayerEndReached, trackEnded)
@@ -131,9 +138,9 @@ def playNumberMessage(number):
         playMessage(firstNumber)
     playMessage(secondNumber)
 
-def playMessage(typeId):
+def playMessage(typeId, ignoreSettings = False):
     global trackQueue
-    if not messages:
+    if not messages and not ignoreSettings:
         return
     typeId = str(typeId)
     path = '/home/pi/books/' + typeId + '.mp3'
@@ -295,12 +302,14 @@ def toggleMessages():
     if isState(S.PlayingMessage) or isState(S.SwitchingBooks):
         return
     messages = not messages
+    playMessage('beep', True)
+    loadTrackAudio()
     saveResumeData()
 
 # DISABLE BUTTON IF ERROR STATE
 if state == S.Error:
     print('\nConfig error detected - you need to restart the system!')
-    playMessage('error')
+    playMessage('error', True)
     loadTrackAudio()
     pause()
 

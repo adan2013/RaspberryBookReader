@@ -45,6 +45,7 @@ maxBook = 0
 maxTrack = 0
 book = 0
 track = 0
+resumeTime = 0
 messages = True
 
 # GPIO DECLARATIONS
@@ -80,7 +81,11 @@ def saveResumeData():
     global config
     config['RESUME']['Book'] = str(book)
     config['RESUME']['Track'] = str(track)
-    config['RESUME']['Time'] = str(media.get_time())
+    currentTime = media.get_time()
+    if currentTime < 60000:
+        config['RESUME']['Time'] = '0'
+    else:
+        config['RESUME']['Time'] = str(currentTime // 1000)
     config['RESUME']['Messages'] = '1' if messages else '0'
     with open('/media/RPI/config.ini', 'w') as conf:
         config.write(conf)
@@ -110,6 +115,7 @@ def loadTrackAudio():
     global media
     global events
     global trackQueue
+    global resumeTime
     events.event_detach(vlc.EventType.MediaPlayerEndReached)
     media.stop()
     if trackQueue.empty():
@@ -117,12 +123,14 @@ def loadTrackAudio():
         print('Loading audio file... BOOK:', book, 'TRACK:', track)
         switchState(S.Playing)
         saveResumeData()
+        media = vlc.MediaPlayer(pathToFile, 'start-time=' + str(resumeTime) + '.0')
+        resumeTime = 0
     else:
         pathToFile = trackQueue.get()
         print('Loading message file... PATH:', pathToFile)
         if not isState(S.Error):
             switchState(S.PlayingMessage)
-    media = vlc.MediaPlayer(pathToFile)
+        media = vlc.MediaPlayer(pathToFile)
     events = media.event_manager()
     events.event_attach(vlc.EventType.MediaPlayerEndReached, trackEnded)
     media.audio_set_volume(100) # volumen level 0-100
@@ -214,7 +222,7 @@ if usbDetected:
     playMessage('start')
     maxBook = int(config['BOOKS']['Count'])
     switchBook(config['RESUME']['Book'], config['RESUME']['Track'])
-    #setAudioPosition(config['RESUME']['Time'], False) # TODO broked time resume
+    resumeTime = int(config['RESUME']['Time'])
     if book == 0 or track == 0:
         switchState(S.Error)
 else:

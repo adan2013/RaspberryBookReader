@@ -124,7 +124,8 @@ def loadTrackAudio():
         switchState(S.Playing)
         saveResumeData()
         media = vlc.MediaPlayer(pathToFile, 'start-time=' + str(resumeTime) + '.0')
-        resumeTime = 0
+        if book > 0 and track > 0:
+            resumeTime = 0
     else:
         pathToFile = trackQueue.get()
         print('Loading message file... PATH:', pathToFile)
@@ -219,10 +220,10 @@ for u in usbs:
 if usbDetected:
     config.read('/media/RPI/config.ini')
     messages = True if config['RESUME']['Messages'] == '1' else False
+    resumeTime = int(config['RESUME']['Time'])
     playMessage('start')
     maxBook = int(config['BOOKS']['Count'])
     switchBook(config['RESUME']['Book'], config['RESUME']['Track'])
-    resumeTime = int(config['RESUME']['Time'])
     if book == 0 or track == 0:
         switchState(S.Error)
 else:

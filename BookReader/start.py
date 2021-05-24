@@ -1,6 +1,5 @@
 import sys
 import gpiozero as GPIO
-import time
 import os
 import re
 import vlc
@@ -79,17 +78,18 @@ def isState(stateToCheck):
 
 def saveResumeData():
     global config
-    config['RESUME']['Book'] = str(book)
-    config['RESUME']['Track'] = str(track)
-    currentTime = media.get_time()
-    if currentTime < 60000:
-        config['RESUME']['Time'] = '0'
-    else:
-        config['RESUME']['Time'] = str(currentTime // 1000)
-    config['RESUME']['Messages'] = '1' if messages else '0'
-    with open('/media/RPI/config.ini', 'w') as conf:
-        config.write(conf)
-    print('Resume data saved!')
+    if usbDetected:
+        config['RESUME']['Book'] = str(book)
+        config['RESUME']['Track'] = str(track)
+        currentTime = media.get_time()
+        if currentTime < 60000:
+            config['RESUME']['Time'] = '0'
+        else:
+            config['RESUME']['Time'] = str(currentTime // 1000)
+        config['RESUME']['Messages'] = '1' if messages else '0'
+        with open('/media/RPI/config.ini', 'w') as conf:
+            config.write(conf)
+        print('Resume data saved!')
 
 def setAudioPosition(value, isRelative):
     global media
@@ -320,7 +320,8 @@ if state == S.Error:
     print('\nConfig error detected - you need to restart the system!')
     playMessage('error', True)
     loadTrackAudio()
-    pause()
+    while True:
+        checkTrackEndedEvent()
 
 # BUTTON EVENTS
 prevBtn.when_pressed = prevChapter

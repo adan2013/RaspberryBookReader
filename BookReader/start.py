@@ -23,6 +23,7 @@ FF_PIN = 19
 NEXT_PIN = 26
 SOURCE_PIN = 21
 MESSAGES_PIN = 20
+VOLUME_CHANNEL = 0
 
 # STATE MACHINE
 class S(Enum):
@@ -46,6 +47,7 @@ book = 0
 track = 0
 resumeTime = 0
 messages = True
+volumeLevel = 0
 
 # GPIO DECLARATIONS
 shutdownBtn = GPIO.Button(SHUTDOWN_PIN)
@@ -60,6 +62,8 @@ ffBtn = GPIO.Button(FF_PIN)
 nextBtn = GPIO.Button(NEXT_PIN)
 sourceBtn = GPIO.Button(SOURCE_PIN)
 messagesBtn = GPIO.Button(MESSAGES_PIN)
+
+volumePot = GPIO.MCP3008(VOLUME_CHANNEL)
 
 # SYSTEM FUNCTIONS
 def switchState(newState):
@@ -134,7 +138,7 @@ def loadTrackAudio():
         media = vlc.MediaPlayer(pathToFile)
     events = media.event_manager()
     events.event_attach(vlc.EventType.MediaPlayerEndReached, trackEnded)
-    media.audio_set_volume(100) # volumen level 0-100
+    media.audio_set_volume(volumeLevel)
     media.play()
 
 def playNumberMessage(number):
@@ -263,6 +267,14 @@ def checkTrackEndedEvent():
             else:
                 loadTrackAudio()
 
+# VOLUME LEVEL
+def checkVolumeLevel():
+    global volumeLevel
+    currentLevel = int(volumePot.value * 100)
+    if currentLevel != volumeLevel:
+        volumeLevel = currentLevel
+        media.audio_set_volume(volumeLevel)
+
 # BUTTON EVENTS
 def prevChapter():
     print('prev button pressed')
@@ -322,6 +334,7 @@ if state == S.Error:
     loadTrackAudio()
     while True:
         checkTrackEndedEvent()
+        checkVolumeLevel()
 
 # BUTTON EVENTS
 prevBtn.when_pressed = prevChapter
@@ -336,7 +349,8 @@ if len(sys.argv) > 1 and sys.argv[1] == '-vkb':
     # VIRTUAL KEYBOARD BUTTONS MODE
     while True:
         checkTrackEndedEvent()
-        print('(Skip this input to detect next track event)')
+        checkVolumeLevel()
+        print('(Skip this input to detect next track event and volume level)')
         k = input('Button key:')
         if k == 'q':
             prevChapter()
@@ -358,3 +372,4 @@ else:
     # AUTOSTART VERSION MODE
     while True:
         checkTrackEndedEvent()
+        checkVolumeLevel()

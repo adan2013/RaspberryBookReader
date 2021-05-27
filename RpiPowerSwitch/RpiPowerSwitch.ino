@@ -3,7 +3,7 @@
 #define RPI_IN_PIN 2
 #define RPI_OUT_PIN 3
 #define MOSFET_PIN 4
-#define PWR_TIMEOUT 30000
+#define PWR_TIMEOUT 20000
 #define BLINK_FREQ 500
 
 #define S_OFF 0

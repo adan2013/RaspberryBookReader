@@ -123,7 +123,13 @@ def loadTrackAudio():
     events.event_detach(vlc.EventType.MediaPlayerEndReached)
     media.stop()
     if trackQueue.empty():
-        pathToFile = '/media/RPI/b' + str(book) + '/' + str(track) + '.mp3'
+        if track < 10:
+            trackFileName = '00' + str(track)
+        elif track < 100:
+            trackFileName = '0' + str(track)
+        else:
+            trackFileName = str(track)
+        pathToFile = '/media/RPI/b' + str(book) + '/' + trackFileName + '.mp3'
         print('Loading audio file... BOOK:', book, 'TRACK:', track)
         switchState(S.Playing)
         saveResumeData()
@@ -145,11 +151,14 @@ def playNumberMessage(number):
     number = int(number)
     if number == 0:
         return
-    firstNumber = number // 10
-    secondNumber = number - firstNumber * 10
+    firstNumber = number // 100
+    secondNumber = (number - firstNumber * 100) // 10
+    thirdNumber = number - firstNumber * 100 - secondNumber * 10
     if firstNumber > 0:
         playMessage(firstNumber)
-    playMessage(secondNumber)
+    if secondNumber > 0:
+        playMessage(secondNumber)
+    playMessage(thirdNumber)
 
 def playMessage(typeId, ignoreSettings = False):
     global trackQueue
